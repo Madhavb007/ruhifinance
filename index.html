@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Finance Tracker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand"><span>↗</span> Finance Tracker</div>
+    <nav id="nav">
+      <button class="nav active" data-view="dashboard">⌂ <span>Dashboard</span></button>
+      <button class="nav" data-view="bank">▣ <span>Bank</span></button>
+      <button class="nav" data-view="mpesa">▤ <span>M-PESA</span></button>
+      <button class="nav" data-view="savings">◇ <span>Savings</span></button>
+      <button class="nav" data-view="transactions">⇄ <span>Transactions</span></button>
+      <button class="nav" data-view="upcoming">◷ <span>Upcoming</span></button>
+      <button class="nav" data-view="budgets">▤ <span>Budgets</span></button>
+            <button class="nav" data-view="analytics">◔ <span>Analytics</span></button>
+      <button class="nav" data-view="networth">↗ <span>Net worth</span></button>
+    </nav>
+    <div class="nav-bottom">
+      <button class="nav" data-view="import">⇧ <span>Import / Export</span></button>
+      <button class="nav" data-view="converter">↔ <span>Currency</span></button>
+      <button class="nav" data-view="settings">⚙ <span>Settings</span></button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">PERSONAL FINANCE</div>
+        <h1 id="pageTitle">Dashboard</h1>
+        <p id="pageSubtitle">Your complete financial picture</p>
+      </div>
+      <div class="top-actions">
+        <label class="display">Display
+          <select id="baseCurrency" onchange="settings.baseCurrency=this.value;saveSettings();render()">
+            <option value="KES">KES</option><option value="GBP">GBP</option><option value="USD">USD</option><option value="EUR">EUR</option>
+          </select>
+        </label>
+        <button class="secondary" onclick="openTransaction()">+ Transaction</button>
+        <button class="primary" onclick="openAccount()">+ Account</button>
+      </div>
+    </header>
+    <div id="content"></div>
+  </main>
+</div>
+
+<!-- Transaction modal -->
+<div class="modal" id="transactionModal">
+<div class="modal-box">
+  <div class="modal-head"><div><div class="eyebrow">ACTIVITY</div><h2>Add transaction</h2></div><button class="close" onclick="closeModal('transactionModal')">×</button></div>
+  <label>Description<input id="txDesc" placeholder="e.g. Salary, groceries, transfer to savings"></label>
+  <div class="two">
+    <label>Amount<input id="txAmount" type="number" min="0.01" step="0.01" placeholder="0.00"></label>
+    <label>Currency<select id="txCurrency"><option>KES</option><option>GBP</option><option>USD</option><option>EUR</option></select></label>
+  </div>
+  <label>Type<select id="txType" onchange="updateTxForm()"><option value="expense">Outgoing / Expense</option><option value="income">Income</option><option value="transfer">Transfer between accounts</option></select></label>
+  <div id="normalTx">
+    <div class="two">
+      <label>Account<select id="txAccount"></select></label>
+      <label>Category<select id="txCategory"></select></label>
+    </div>
+    <div class="two">
+      <label>Date<input id="txDate" type="date"></label>
+      <label>Status<select id="txStatus"><option value="completed">Completed</option><option value="upcoming">Upcoming</option></select></label>
+    </div>
+    <label class="check"><input id="txRecurring" type="checkbox"> Recurring</label>
+    <div id="recurringFields" class="two hidden">
+      <label>Frequency<select id="txFrequency"><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="yearly">Yearly</option></select></label>
+      <label>Repeat until<input id="txRepeatUntil" type="date"></label>
+    </div>
+  </div>
+  <div id="transferTx" class="transfer-box hidden">
+    <strong>↔ Own-account transfer</strong>
+    <div class="two">
+      <label>From<select id="txFrom" onchange="syncTransfer()"></select></label>
+      <label>To<select id="txTo" onchange="syncTransfer()"></select></label>
+    </div>
+    <div id="transferSummary" class="transfer-summary"></div>
+    <div class="two">
+      <label>Date<input id="transferDate" type="date"></label>
+      <label>Status<select id="transferStatus"><option value="completed">Completed</option><option value="upcoming">Upcoming</option></select></label>
+    </div>
+    <label>Transfer fee (optional)<input id="transferFee" type="number" min="0" step="0.01" value="0"></label>
+    <p class="help">A transfer changes where your money sits. It does not count as income or spending.</p>
+  </div>
+  <div class="modal-actions"><button class="secondary" onclick="closeModal('transactionModal')">Cancel</button><button class="primary" onclick="saveTransaction()">Save transaction</button></div>
+</div>
+</div>
+
+<!-- Account modal -->
+<div class="modal" id="accountModal">
+<div class="modal-box">
+  <div class="modal-head"><div><div class="eyebrow">ACCOUNTS</div><h2>Add account</h2></div><button class="close" onclick="closeModal('accountModal')">×</button></div>
+  <label>Account name<input id="accName" placeholder="e.g. Personal Bank Account"></label>
+  <div class="two">
+    <label>Account type<select id="accType"><option value="bank">🏦 Bank account</option><option value="savings">🎯 Savings account</option><option value="mpesa">📱 M-PESA</option><option value="cash">💵 Cash</option><option value="credit">💳 Credit card</option><option value="debt">Loan / debt</option><option value="other">Other</option></select></label>
+    <label>Currency<select id="accCurrency"><option>KES</option><option>GBP</option><option>USD</option><option>EUR</option></select></label>
+  </div>
+  <label>Opening balance<input id="accOpening" type="number" step="0.01" value="0"></label>
+  <p class="help">Use the opening balance on the day you start tracking. You can add as many accounts as you need.</p>
+  <div class="modal-actions"><button class="secondary" onclick="closeModal('accountModal')">Cancel</button><button class="primary" onclick="saveAccount()">Save account</button></div>
+</div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
